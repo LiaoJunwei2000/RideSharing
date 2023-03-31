@@ -10,6 +10,7 @@ contract Ride {
         int256 endLat;
         int256 endLong;
         bool isCompleted;
+        bool cancelled;
     }
 
     RideInfo[] public rides;
@@ -30,7 +31,8 @@ contract Ride {
             startLong: startLong,
             endLat: endLat,
             endLong: endLong,
-            isCompleted: false
+            isCompleted: false,
+            cancelled: false
         });
 
         rides.push(newRide);
@@ -43,6 +45,16 @@ contract Ride {
 
     function completeRide(uint rideIndex) public {
         rides[rideIndex].isCompleted = true;
+    }
+
+    function cancelRide(uint rideIndex) public {
+        RideInfo storage rideInfo = rides[rideIndex];
+        require(
+            msg.sender == rideInfo.rider,
+            "Only the rider can cancel the ride."
+        );
+        require(!rideInfo.cancelled, "Ride is already cancelled.");
+        rideInfo.cancelled = true;
     }
 
     function getRideDetails(

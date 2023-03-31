@@ -15,9 +15,9 @@ contract("RideSharing", (accounts) => {
   const driver = accounts[2];
 
   before(async () => {
-    userContract = await User.new();
-    rideSharingContract = await RideSharing.new(userContract.address);
-    rideContract = await Ride.new();
+    userContract = await User.deployed();
+    rideContract = await Ride.deployed();
+    rideSharingContract = await RideSharing.deployed();
 
     await userContract.registerUser(
       "Rider Name",
@@ -45,7 +45,6 @@ contract("RideSharing", (accounts) => {
     const endLong = 45678901;
 
     await rideSharingContract.createRide(
-      rideContract.address,
       fare,
       startLat,
       startLong,
@@ -76,7 +75,7 @@ contract("RideSharing", (accounts) => {
   it("should allow a driver to accept a ride", async () => {
     const rideIndex = await rideSharingContract.getRideIndex(0);
 
-    await rideSharingContract.acceptRide(rideContract.address, rideIndex, {
+    await rideSharingContract.acceptRide(rideIndex, {
       from: driver,
     });
 
@@ -87,7 +86,7 @@ contract("RideSharing", (accounts) => {
   it("should complete a ride", async () => {
     const rideIndex = await rideSharingContract.getRideIndex(0);
 
-    await rideSharingContract.completeRide(rideContract.address, rideIndex, {
+    await rideSharingContract.completeRide(rideIndex, {
       from: rider,
     });
 
@@ -148,60 +147,24 @@ contract("RideSharing", (accounts) => {
     );
 
     // Create rides
-    let ride1 = await rideSharingContract.createRide(
-      rideContract.address,
-      500,
-      10,
-      10,
-      20,
-      20,
-      { from: accounts[1] }
-    );
-    let ride2 = await rideSharingContract.createRide(
-      rideContract.address,
-      600,
-      15,
-      15,
-      25,
-      25,
-      { from: accounts[2] }
-    );
-    let ride3 = await rideSharingContract.createRide(
-      rideContract.address,
-      700,
-      20,
-      20,
-      30,
-      30,
-      { from: accounts[3] }
-    );
-    let ride4 = await rideSharingContract.createRide(
-      rideContract.address,
-      800,
-      30,
-      30,
-      40,
-      40,
-      { from: accounts[4] }
-    );
-    let ride5 = await rideSharingContract.createRide(
-      rideContract.address,
-      900,
-      40,
-      40,
-      50,
-      50,
-      { from: accounts[5] }
-    );
-    let ride6 = await rideSharingContract.createRide(
-      rideContract.address,
-      1000,
-      50,
-      50,
-      60,
-      60,
-      { from: accounts[6] }
-    );
+    let ride1 = await rideSharingContract.createRide(500, 10, 10, 20, 20, {
+      from: accounts[1],
+    });
+    let ride2 = await rideSharingContract.createRide(600, 15, 15, 25, 25, {
+      from: accounts[2],
+    });
+    let ride3 = await rideSharingContract.createRide(700, 20, 20, 30, 30, {
+      from: accounts[3],
+    });
+    let ride4 = await rideSharingContract.createRide(800, 30, 30, 40, 40, {
+      from: accounts[4],
+    });
+    let ride5 = await rideSharingContract.createRide(900, 40, 40, 50, 50, {
+      from: accounts[5],
+    });
+    let ride6 = await rideSharingContract.createRide(1000, 50, 50, 60, 60, {
+      from: accounts[6],
+    });
 
     // Get available rides for driver
     let availableRides = await rideSharingContract.getAvailableRides(0, 0, {

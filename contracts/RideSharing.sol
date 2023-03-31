@@ -5,6 +5,7 @@ import "./Ride.sol";
 
 contract RideSharing {
     User private userContract;
+    address public rideContractAddress;
     mapping(address => uint) public riderRideIndex;
     mapping(address => uint) public driverRideIndex;
     address[] public ridesList;
@@ -16,8 +17,9 @@ contract RideSharing {
     );
     event RideAccepted(uint indexed rideIndex, address indexed driver);
 
-    constructor(address _userContract) public {
+    constructor(address _userContract, address _rideContractAddress) public {
         userContract = User(_userContract);
+        rideContractAddress = _rideContractAddress;
     }
 
     function sqrt(uint x) private pure returns (uint y) {
@@ -41,7 +43,6 @@ contract RideSharing {
     }
 
     function createRide(
-        address rideContractAddress,
         uint256 fare,
         int256 startLat,
         int256 startLong,
@@ -70,7 +71,7 @@ contract RideSharing {
         emit RideCreated(rideContractAddress, rideIndex, msg.sender);
     }
 
-    function acceptRide(address rideContractAddress, uint rideIndex) public {
+    function acceptRide(uint rideIndex) public {
         (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
         require(isDriver, "Only drivers can accept rides.");
         require(
@@ -87,7 +88,7 @@ contract RideSharing {
         emit RideAccepted(rideIndex, msg.sender);
     }
 
-    function completeRide(address rideContractAddress, uint rideIndex) public {
+    function completeRide(uint rideIndex) public {
         Ride rideContract = Ride(rideContractAddress);
         (address rider, address driver, , , , , , ) = rideContract
             .getRideDetails(rideIndex);
@@ -99,6 +100,22 @@ contract RideSharing {
         rideContract.completeRide(rideIndex);
         riderRideIndex[rider] = 0;
         driverRideIndex[driver] = 0;
+    }
+
+    function cancelRide(uint rideIndex) public {
+        (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
+        require(!isDriver, "Only riders can cancel rides.");
+
+        Ride rideContract = Ride(rideContractAddress);
+        (address rider, address driver, , , , , , ) = rideContract
+            .getRideDetails(rideIndex);
+        require(rider == msg.sender, "Only the rider can cancel the ride.");
+        require(
+            driver == address(0),
+            "Ride can only be cancelled with no driver."
+        );
+
+        rideContract.cancelRide(rideIndex);
     }
 
     function getRideIndex(uint index) public view returns (uint) {
