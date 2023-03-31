@@ -1,68 +1,62 @@
 pragma solidity ^0.5.0;
 
 contract User {
-    struct user {
-        address walletAddress;
+    struct UserInfo {
         string name;
-        uint256 userID;
-    }
-
-    uint256 rating;
-    uint256 numUsers = 0;
-
-    mapping(uint256 => user) private users;
-    mapping(address => user) private userInfo;
-
-    //event AccountCreated()
-
-    function createAccount(string memory name) public {
-        require(bytes(name).length > 0, "Name cannot be empty");
-        require(
-            userInfo[msg.sender].walletAddress == address(0),
-            "User already exists"
-        );
-
-        user memory newUser = user(msg.sender, name, numUsers + 1);
-        // Add new user to mapping users
-        users[numUsers] = newUser;
-
-        // Add new user to mapping userInfo
-
-        userInfo[msg.sender] = newUser;
-
-        numUsers++;
-    }
-}
-
-contract Rider is User {
-    //import "./User.sol";
-    struct rider {
-        uint256 passengerRating;
-        uint256 numRides;
-        uint256 numPassengers;
-    }
-
-    function bookRide() private {}
-
-    function cancelRide() private {}
-
-    function completeRide() private {}
-}
-
-contract Driver is User {
-    //import "./User.sol";
-
-    struct driver {
-        uint256 driverRating;
-        uint256 numRides;
-        string carPlate;
+        string email;
+        uint256 totalRating;
+        uint256 ratingCount;
+        bool isDriver;
         string carModel;
-        uint256 passengerCapacity;
+        string carPlate;
     }
 
-    function acceptRide() private {}
+    mapping(address => UserInfo) private users;
 
-    function cancelRide() private {}
+    function registerUser(
+        string memory name,
+        string memory email,
+        bool isDriver,
+        string memory carModel,
+        string memory carPlate
+    ) public {
+        users[msg.sender] = UserInfo(
+            name,
+            email,
+            0,
+            0,
+            isDriver,
+            carModel,
+            carPlate
+        );
+    }
 
-    function completeRide() private {}
+    function rateUser(address user, uint256 rating) public {
+        require(rating >= 1 && rating <= 5, "Rating must be between 1 and 5.");
+        require(user != msg.sender, "Cannot rate yourself.");
+        UserInfo storage userInfo = users[user];
+        userInfo.totalRating += rating;
+        userInfo.ratingCount += 1;
+    }
+
+    function getUserInfo(
+        address user
+    ) public view returns (string memory, string memory, bool, uint256) {
+        UserInfo memory userInfo = users[user];
+        return (
+            userInfo.name,
+            userInfo.email,
+            userInfo.isDriver,
+            getUserRating(user)
+        );
+    }
+
+    function getUserRating(address user) public view returns (uint256) {
+        UserInfo storage userInfo = users[user];
+        if (userInfo.ratingCount == 0) {
+            return 0;
+        } else {
+            return userInfo.totalRating / userInfo.ratingCount;
+        }
+    }
 }

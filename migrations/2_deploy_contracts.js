@@ -1,19 +1,10 @@
-const ERC20 = artifacts.require("ERC20");
-const RNG = artifacts.require("RNG");
-const DiceToken = artifacts.require("DiceToken");
-const Dice = artifacts.require("Dice");
-const DiceCasino = artifacts.require("DiceCasino");
+const User = artifacts.require("User");
+const RideSharing = artifacts.require("RideSharing");
+const Ride = artifacts.require("Ride");
 
-module.exports = (deployer, network, accounts) => {
-  deployer
-    .deploy(DiceToken)
-    .then(function () {
-      return deployer.deploy(RNG);
-    })
-    .then(function () {
-      return deployer.deploy(Dice, DiceToken.address,RNG.address);
-    })
-    .then(function () {
-      return deployer.deploy(DiceCasino, Dice.address, DiceToken.address);
-    });
+module.exports = function (deployer) {
+  deployer.deploy(User).then(function () {
+    return deployer.deploy(RideSharing, User.address);
+  });
+  deployer.deploy(Ride);
 };
