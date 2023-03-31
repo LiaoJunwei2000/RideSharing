@@ -14,7 +14,7 @@ contract RideToken {
 
     /**
      * @dev Function to give RT to the recipient for a given wei amount
-     * @param recipient address of the recipient that wants to buy the DT
+     * @param recipient address of the recipient that wants to buy the RT
      * @param weiAmt uint256 amount indicating the amount of wei that was passed
      * @return A uint256 representing the amount of RT bought by the msg.sender.
      */
@@ -28,9 +28,9 @@ contract RideToken {
     }
 
     /**
-     * @dev Function to check the amount of DT the msg.sender has
-     * @param ad address of the recipient that wants to check their DT
-     * @return A uint256 representing the amount of DT owned by the msg.sender.
+     * @dev Function to check the amount of RT the msg.sender has
+     * @param ad address of the recipient that wants to check their RT
+     * @return A uint256 representing the amount of RT owned by the msg.sender.
      */
     function checkCredit(address ad) public view returns (uint256) {
         uint256 credit = erc20Contract.balanceOf(ad);
@@ -39,7 +39,7 @@ contract RideToken {
 
     /**
      * @dev Function to transfer the credit from the owner to the recipient
-     * @param recipient address of the recipient that will gain in DT
+     * @param recipient address of the recipient that will gain in RT
      * @param amt uint256 aount of RT to transfer
      */
     function transferCredit(address recipient, uint256 amt) public {
