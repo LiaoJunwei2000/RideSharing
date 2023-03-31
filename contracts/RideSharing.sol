@@ -20,6 +20,26 @@ contract RideSharing {
         userContract = User(_userContract);
     }
 
+    function sqrt(uint x) private pure returns (uint y) {
+        uint z = (x + 1) / 2;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
+    }
+
+    function getDistance(
+        int256 lat1,
+        int256 long1,
+        int256 lat2,
+        int256 long2
+    ) private pure returns (uint) {
+        int256 dLat = lat2 - lat1;
+        int256 dLong = long2 - long1;
+        return uint(1000 * sqrt((uint((dLat * dLat) + (dLong * dLong)))));
+    }
+
     function createRide(
         address rideContractAddress,
         uint256 fare,
@@ -87,5 +107,72 @@ contract RideSharing {
 
     function getRideCount() public view returns (uint) {
         return ridesList.length;
+    }
+
+    function getAvailableRides(
+        int256 driverLat,
+        int256 driverLong
+    ) public view returns (address[] memory) {
+        (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
+        require(isDriver, "Only drivers can get available rides.");
+
+        uint[] memory distances = new uint[](ridesList.length);
+        address[] memory sortedRides = new address[](ridesList.length);
+
+        for (uint i = 0; i < ridesList.length; i++) {
+            Ride rideContract = Ride(ridesList[i]);
+            (
+                ,
+                address currentDriver,
+                ,
+                int256 startLat,
+                int256 startLong,
+                ,
+                ,
+                bool isCompleted
+            ) = rideContract.getRideDetails(i);
+            if (currentDriver == address(0) && !isCompleted) {
+                uint distance = getDistance(
+                    driverLat,
+                    driverLong,
+                    startLat,
+                    startLong
+                );
+                distances[i] = distance;
+                sortedRides[i] = ridesList[i];
+            }
+        }
+
+        for (uint i = 0; i < ridesList.length; i++) {
+            for (uint j = i + 1; j < ridesList.length; j++) {
+                if (distances[i] > distances[j]) {
+                    uint tempDistance = distances[i];
+                    distances[i] = distances[j];
+                    distances[j] = tempDistance;
+
+                    address tempRide = sortedRides[i];
+                    sortedRides[i] = sortedRides[j];
+                    sortedRides[j] = tempRide;
+                }
+            }
+        }
+
+        uint count = 0;
+        for (uint i = 0; i < sortedRides.length; i++) {
+            if (sortedRides[i] != address(0)) {
+                count++;
+            }
+        }
+        uint resultLength = count > 5 ? 5 : count;
+        address[] memory nearestRides = new address[](resultLength);
+        uint index = 0;
+        for (uint i = 0; i < sortedRides.length && index < resultLength; i++) {
+            if (sortedRides[i] != address(0)) {
+                nearestRides[index] = sortedRides[i];
+                index++;
+            }
+        }
+
+        return nearestRides;
     }
 }
