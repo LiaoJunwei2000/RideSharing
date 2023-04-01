@@ -22,6 +22,8 @@ contract RideSharing {
 
     event RideCancelled(uint indexed rideIndex, address indexed rider);
 
+    event RideStarted(uint indexed rideIndex);
+
     event RideCompleted(uint indexed rideIndex);
 
     constructor(address _userContract, address _rideContractAddress) {
@@ -118,6 +120,13 @@ contract RideSharing {
             "Must have a driver before being able to start a ride"
         );
         rideContract.startRide(rideIndex, msg.sender);
+
+        if (
+            rideContract.getRideDetails(rideIndex).rideStatus ==
+            RideStatus.Started
+        ) {
+            emit RideStarted(rideIndex);
+        }
     }
 
     /**

@@ -93,6 +93,59 @@ contract("RideSharing", (accounts) => {
     assert.equal(rideDetails.driver, driver, "Driver address should match.");
   });
 
+  it("should allow both rider and driver to start the ride independently", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+    const rideIndex = await rideSharingContract.getRideIndex(0);
+
+    await rideSharingContract.acceptRide(rideIndex, {
+      from: driver,
+    });
+
+    const riderStart = await rideSharingContract.startRide(rideIndex, {
+      from: rider,
+    });
+
+    truffleAssert.eventNotEmitted(riderStart, "RideStarted");
+
+    const riderAndDriverStart = await rideSharingContract.startRide(rideIndex, {
+      from: driver,
+    });
+
+    truffleAssert.eventEmitted(
+      riderAndDriverStart,
+      "RideStarted",
+      (ev) => ev.rideIndex == 0
+    );
+  });
+
+  it("should not allow a third party to start the ride", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+    const rideIndex = await rideSharingContract.getRideIndex(0);
+
+    await rideSharingContract.acceptRide(rideIndex, {
+      from: driver,
+    });
+
+    await truffleAssert.reverts(
+      rideSharingContract.startRide(rideIndex, { from: accounts[3] }),
+      "Only the rider or driver can start the ride."
+    );
+  });
+
   it("should complete a ride", async () => {
     await rideSharingContract.createRide(
       fare,
