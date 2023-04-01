@@ -109,6 +109,14 @@ contract("RideSharing", (accounts) => {
       from: driver,
     });
 
+    await rideSharingContract.startRide(rideIndex, {
+      from: driver,
+    });
+
+    await rideSharingContract.startRide(rideIndex, {
+      from: rider,
+    });
+
     await rideSharingContract.completeRide(rideIndex, 5, {
       from: rider,
     });
@@ -118,7 +126,7 @@ contract("RideSharing", (accounts) => {
     });
 
     const rideDetails = await rideContract.getRideDetails(rideIndex);
-    assert.equal(rideDetails.isCompleted, true, "Ride should be completed.");
+    assert.equal(rideDetails.rideStatus, 2, "Ride should be completed.");
     truffleAssert.eventEmitted(result, "RideCompleted", (ev) => {
       return ev.rideIndex == 0;
     });
@@ -244,7 +252,7 @@ contract("RideSharing", (accounts) => {
     const ride = await Ride.at(rideContractAddress);
     const rideDetails = await ride.getRideDetails(rideIndex);
 
-    assert.equal(rideDetails.isCancelled, true, "Ride should be cancelled");
+    assert.equal(rideDetails.rideStatus, 3, "Ride should be cancelled");
   });
 
   it("should not allow rider to create multiple rides at the same time", async () => {
@@ -310,6 +318,14 @@ contract("RideSharing", (accounts) => {
       { from: rider }
     );
     await rideSharingContract.acceptRide(0, { from: driver });
+
+    await rideSharingContract.startRide(0, {
+      from: driver,
+    });
+
+    await rideSharingContract.startRide(0, {
+      from: rider,
+    });
 
     const rideTx1 = await rideSharingContract.completeRide(0, 5, {
       from: rider,

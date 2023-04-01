@@ -24,8 +24,9 @@ contract Ride {
             endLong: endLong,
             riderCompleted: false,
             driverCompleted: false,
-            isCompleted: false,
-            isCancelled: false
+            rideStatus: RideStatus.Created,
+            riderStarted: false,
+            driverStarted: false
         });
 
         rides.push(newRide);
@@ -43,16 +44,44 @@ contract Ride {
         } else {
             rideInfo.driverCompleted = true;
         }
-        rideInfo.isCompleted =
-            rideInfo.riderCompleted &&
-            rideInfo.driverCompleted;
+
+        if (rideInfo.riderCompleted && rideInfo.driverCompleted) {
+            rideInfo.rideStatus = RideStatus.Completed;
+        }
+    }
+
+    function startRide(uint rideIndex, address orignalCaller) public {
+        RideInfo storage rideInfo = rides[rideIndex];
+
+        require(
+            rideInfo.rideStatus == RideStatus.Created,
+            "Ride must be in the Created status to be started."
+        );
+
+        require(
+            orignalCaller == rideInfo.rider || orignalCaller == rideInfo.driver,
+            "Only Rider or driver can start the ride "
+        );
+
+        if (orignalCaller == rideInfo.rider) {
+            rideInfo.riderStarted = true;
+        } else {
+            rideInfo.driverStarted = true;
+        }
+
+        if (rideInfo.riderStarted && rideInfo.driverStarted) {
+            rideInfo.rideStatus = RideStatus.Started;
+        }
     }
 
     function cancelRide(uint rideIndex) public {
         RideInfo storage rideInfo = rides[rideIndex];
 
-        require(!rideInfo.isCancelled, "Ride is already cancelled.");
-        rideInfo.isCancelled = true;
+        require(
+            rideInfo.rideStatus != RideStatus.Cancelled,
+            "Ride is already cancelled."
+        );
+        rideInfo.rideStatus = RideStatus.Cancelled;
     }
 
     function getRideDetails(

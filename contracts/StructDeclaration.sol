@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+enum RideStatus {
+    Created,
+    Started,
+    Completed,
+    Cancelled
+}
+
 struct RideInfo {
     address rider;
     address driver;
@@ -11,6 +18,7 @@ struct RideInfo {
     int256 endLong;
     bool riderCompleted;
     bool driverCompleted;
-    bool isCompleted;
-    bool isCancelled;
+    RideStatus rideStatus;
+    bool riderStarted;
+    bool driverStarted;
 }

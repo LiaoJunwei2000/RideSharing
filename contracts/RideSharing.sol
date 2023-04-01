@@ -104,6 +104,22 @@ contract RideSharing {
         emit RideAccepted(rideIndex, msg.sender);
     }
 
+    function startRide(uint rideIndex) public {
+        Ride rideContract = Ride(rideContractAddress);
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+
+        require(
+            rideInfo.rider == msg.sender || rideInfo.driver == msg.sender,
+            "Only the rider or driver can start the ride."
+        );
+
+        require(
+            rideInfo.driver != address(0),
+            "Must have a driver before being able to start a ride"
+        );
+        rideContract.startRide(rideIndex, msg.sender);
+    }
+
     /**
      * @dev Allows the driver and drive to mark a ride as completed
      */
@@ -112,11 +128,19 @@ contract RideSharing {
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
 
         require(
+            rideInfo.rideStatus == RideStatus.Started,
+            "Ride must be in the Started status to be completed."
+        );
+
+        require(
             (msg.sender == rideInfo.rider) || (msg.sender == rideInfo.driver),
             "Only rider or driver can complete the ride."
         );
 
-        require(!rideInfo.isCompleted, "Ride has already been completed");
+        require(
+            rideInfo.rideStatus != RideStatus.Completed,
+            "Ride has already been completed"
+        );
 
         bool isRider = rideInfo.rider == msg.sender;
 
@@ -134,7 +158,10 @@ contract RideSharing {
             driverHasActiveRide[msg.sender] = false;
         }
 
-        if (rideContract.getRideDetails(rideIndex).isCompleted) {
+        if (
+            rideContract.getRideDetails(rideIndex).rideStatus ==
+            RideStatus.Completed
+        ) {
             emit RideCompleted(rideIndex);
         }
     }
@@ -154,6 +181,10 @@ contract RideSharing {
         require(
             rideInfo.driver == address(0),
             "Ride can only be cancelled with no driver."
+        );
+        require(
+            rideInfo.rideStatus == RideStatus.Created,
+            "Ride can only be cancelled in the Created State"
         );
 
         rideContract.cancelRide(rideIndex);
@@ -194,8 +225,7 @@ contract RideSharing {
 
             if (
                 rideInfo.driver == address(0) &&
-                !rideInfo.isCompleted &&
-                !rideInfo.isCancelled
+                rideInfo.rideStatus == RideStatus.Created
             ) {
                 uint distance = getDistance(
                     driverLat,
