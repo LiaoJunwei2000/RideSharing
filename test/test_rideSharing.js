@@ -13,6 +13,11 @@ contract("RideSharing", (accounts) => {
   let rideContract;
   const rider = accounts[1];
   const driver = accounts[2];
+  const fare = 100;
+  const startLat = 12345678;
+  const startLong = 23456789;
+  const endLat = 34567890;
+  const endLong = 45678901;
 
   beforeEach(async () => {
     userContract = await User.new();
@@ -41,12 +46,6 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should create a new ride", async () => {
-    const fare = 100;
-    const startLat = 12345678;
-    const startLong = 23456789;
-    const endLat = 34567890;
-    const endLong = 45678901;
-
     await rideSharingContract.createRide(
       fare,
       startLat,
@@ -76,12 +75,6 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should allow a driver to accept a ride", async () => {
-    const fare = 100;
-    const startLat = 12345678;
-    const startLong = 23456789;
-    const endLat = 34567890;
-    const endLong = 45678901;
-
     await rideSharingContract.createRide(
       fare,
       startLat,
@@ -101,12 +94,6 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should complete a ride", async () => {
-    const fare = 100;
-    const startLat = 12345678;
-    const startLong = 23456789;
-    const endLat = 34567890;
-    const endLong = 45678901;
-
     await rideSharingContract.createRide(
       fare,
       startLat,
@@ -126,12 +113,15 @@ contract("RideSharing", (accounts) => {
       from: rider,
     });
 
-    await rideSharingContract.completeRide(rideIndex, 5, {
+    const result = await rideSharingContract.completeRide(rideIndex, 5, {
       from: driver,
     });
 
     const rideDetails = await rideContract.getRideDetails(rideIndex);
     assert.equal(rideDetails.isCompleted, true, "Ride should be completed.");
+    truffleAssert.eventEmitted(result, "RideCompleted", (ev) => {
+      return ev.rideIndex == 0;
+    });
   });
 
   it("should return the 5 nearest available rides", async () => {
@@ -232,13 +222,6 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should allow rider to cancel a ride", async () => {
-    // Create a ride
-    const fare = 200;
-    const startLat = 123456789;
-    const startLong = 987654321;
-    const endLat = 223456789;
-    const endLong = 887654321;
-
     const rideCreationResult = await rideSharingContract.createRide(
       fare,
       startLat,
@@ -265,12 +248,6 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should not allow rider to create multiple rides at the same time", async () => {
-    const fare = 100;
-    const startLat = 12345678;
-    const startLong = 23456789;
-    const endLat = 34567890;
-    const endLong = 45678901;
-
     await rideSharingContract.createRide(
       fare,
       startLat,
@@ -295,12 +272,6 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should not allow driver to accept multiple rides at the same time", async () => {
-    const fare = 100;
-    const startLat = 12345678;
-    const startLong = 23456789;
-    const endLat = 34567890;
-    const endLong = 45678901;
-
     await userContract.registerUser(
       "David",
       "david@example.com",
@@ -327,5 +298,37 @@ contract("RideSharing", (accounts) => {
         rideSharingContract.acceptRide(1, { from: driver }),
         "Driver already has an active ride."
       );
+  });
+
+  it("ride should only be completed if both driver and rider completes the trip", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+    await rideSharingContract.acceptRide(0, { from: driver });
+
+    const rideTx1 = await rideSharingContract.completeRide(0, 5, {
+      from: rider,
+    });
+
+    truffleAssert.eventNotEmitted(rideTx1, "RideCompleted");
+
+    const rideTx2 = await rideSharingContract.completeRide(0, 5, {
+      from: rider,
+    });
+
+    truffleAssert.eventNotEmitted(rideTx2, "RideCompleted");
+
+    const driverTx1 = await rideSharingContract.completeRide(0, 5, {
+      from: driver,
+    });
+
+    truffleAssert.eventEmitted(driverTx1, "RideCompleted", (ev) => {
+      return ev.rideIndex == 0;
+    });
   });
 });

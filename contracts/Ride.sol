@@ -22,7 +22,8 @@ contract Ride {
             startLong: startLong,
             endLat: endLat,
             endLong: endLong,
-            atLeastOneCompleted: false,
+            riderCompleted: false,
+            driverCompleted: false,
             isCompleted: false,
             isCancelled: false
         });
@@ -35,13 +36,16 @@ contract Ride {
         rides[rideIndex].driver = driver;
     }
 
-    function completeRide(uint rideIndex) public {
+    function completeRide(uint rideIndex, bool isRider) public {
         RideInfo storage rideInfo = rides[rideIndex];
-        if (!rideInfo.atLeastOneCompleted) {
-            rideInfo.atLeastOneCompleted = true;
+        if (isRider) {
+            rideInfo.riderCompleted = true;
         } else {
-            rideInfo.isCompleted = true;
+            rideInfo.driverCompleted = true;
         }
+        rideInfo.isCompleted =
+            rideInfo.riderCompleted &&
+            rideInfo.driverCompleted;
     }
 
     function cancelRide(uint rideIndex) public {

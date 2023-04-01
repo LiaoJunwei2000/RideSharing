@@ -22,6 +22,8 @@ contract RideSharing {
 
     event RideCancelled(uint indexed rideIndex, address indexed rider);
 
+    event RideCompleted(uint indexed rideIndex);
+
     constructor(address _userContract, address _rideContractAddress) {
         userContract = User(_userContract);
         rideContractAddress = _rideContractAddress;
@@ -124,12 +126,16 @@ contract RideSharing {
             isRider
         );
 
-        rideContract.completeRide(rideIndex);
+        rideContract.completeRide(rideIndex, isRider);
 
         if (isRider) {
             riderHasActiveRide[msg.sender] = false;
         } else {
             driverHasActiveRide[msg.sender] = false;
+        }
+
+        if (rideContract.getRideDetails(rideIndex).isCompleted) {
+            emit RideCompleted(rideIndex);
         }
     }
 

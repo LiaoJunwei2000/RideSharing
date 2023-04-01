@@ -9,7 +9,8 @@ struct RideInfo {
     int256 startLong;
     int256 endLat;
     int256 endLong;
-    bool atLeastOneCompleted;
+    bool riderCompleted;
+    bool driverCompleted;
     bool isCompleted;
     bool isCancelled;
 }
