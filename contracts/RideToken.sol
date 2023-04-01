@@ -1,4 +1,5 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "./ERC20.sol";
 
@@ -6,7 +7,7 @@ contract RideToken {
     ERC20 erc20Contract;
     address owner;
 
-    constructor() public {
+    constructor() {
         ERC20 e = new ERC20();
         erc20Contract = e;
         owner = msg.sender;

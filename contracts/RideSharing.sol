@@ -1,4 +1,5 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "./User.sol";
 import "./Ride.sol";
@@ -19,7 +20,7 @@ contract RideSharing {
 
     event RideCancelled(uint indexed rideIndex, address indexed rider);
 
-    constructor(address _userContract, address _rideContractAddress) public {
+    constructor(address _userContract, address _rideContractAddress) {
         userContract = User(_userContract);
         rideContractAddress = _rideContractAddress;
     }

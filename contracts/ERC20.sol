@@ -1,4 +1,5 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 //first need to approve the address of spender
 // Check the allowance
@@ -106,12 +107,10 @@ contract ERC20 {
      * @param _amount The amount of tokens to mint.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mint(address _to, uint256 _amount)
-        public
-        onlyOwner
-        canMint
-        returns (bool)
-    {
+    function mint(
+        address _to,
+        uint256 _amount
+    ) public onlyOwner canMint returns (bool) {
         totalSupply_ = totalSupply_.add(_amount);
         balances[_to] = balances[_to].add(_amount);
         emit Mint(_to, _amount);
