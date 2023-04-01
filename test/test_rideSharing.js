@@ -122,8 +122,12 @@ contract("RideSharing", (accounts) => {
       from: driver,
     });
 
-    await rideSharingContract.completeRide(rideIndex, {
+    await rideSharingContract.completeRide(rideIndex, 5, {
       from: rider,
+    });
+
+    await rideSharingContract.completeRide(rideIndex, 5, {
+      from: driver,
     });
 
     const rideDetails = await rideContract.getRideDetails(rideIndex);
@@ -259,8 +263,7 @@ contract("RideSharing", (accounts) => {
     // Check if the ride is cancelled
     const ride = await Ride.at(rideContractAddress);
     const rideDetails = await ride.getRideDetails(rideIndex);
-    const isCancelled = rideDetails[8];
 
-    assert.equal(isCancelled, true, "Ride should be cancelled");
+    assert.equal(rideDetails.isCancelled, true, "Ride should be cancelled");
   });
 });

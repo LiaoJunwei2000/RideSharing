@@ -22,6 +22,7 @@ contract Ride {
             startLong: startLong,
             endLat: endLat,
             endLong: endLong,
+            atLeastOneCompleted: false,
             isCompleted: false,
             isCancelled: false
         });
@@ -35,7 +36,12 @@ contract Ride {
     }
 
     function completeRide(uint rideIndex) public {
-        rides[rideIndex].isCompleted = true;
+        RideInfo storage rideInfo = rides[rideIndex];
+        if (!rideInfo.atLeastOneCompleted) {
+            rideInfo.atLeastOneCompleted = true;
+        } else {
+            rideInfo.isCompleted = true;
+        }
     }
 
     function cancelRide(uint rideIndex) public {

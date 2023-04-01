@@ -5,8 +5,10 @@ contract User {
     struct UserInfo {
         string name;
         string email;
-        uint256 totalRating;
-        uint256 ratingCount;
+        uint256 riderTotalRating;
+        uint256 riderRatingCount;
+        uint256 driverTotalRating;
+        uint256 driverRatingCount;
         bool isDriver;
         string carModel;
         string carPlate;
@@ -37,6 +39,8 @@ contract User {
             email,
             0,
             0,
+            0,
+            0,
             isDriver,
             carModel,
             carPlate
@@ -52,32 +56,52 @@ contract User {
         );
     }
 
-    function rateUser(address user, uint256 rating) public {
+    function rateUser(address user, uint256 rating, bool isRider) public {
         require(rating >= 1 && rating <= 5, "Rating must be between 1 and 5.");
         require(user != msg.sender, "Cannot rate yourself.");
         UserInfo storage userInfo = users[user];
-        userInfo.totalRating += rating;
-        userInfo.ratingCount += 1;
+        if (isRider) {
+            userInfo.riderTotalRating += rating;
+            userInfo.riderRatingCount += 1;
+        } else {
+            userInfo.driverTotalRating += rating;
+            userInfo.driverRatingCount += 1;
+        }
     }
 
     function getUserInfo(
         address user
-    ) public view returns (string memory, string memory, bool, uint256) {
+    )
+        public
+        view
+        returns (string memory, string memory, bool, uint256, uint256)
+    {
         UserInfo memory userInfo = users[user];
         return (
             userInfo.name,
             userInfo.email,
             userInfo.isDriver,
-            getUserRating(user)
+            getUserRating(user, true),
+            getUserRating(user, false)
         );
     }
 
-    function getUserRating(address user) public view returns (uint256) {
+    function getUserRating(
+        address user,
+        bool isRider
+    ) public view returns (uint256) {
         UserInfo storage userInfo = users[user];
-        if (userInfo.ratingCount == 0) {
+        uint256 ratingCount = isRider
+            ? userInfo.riderRatingCount
+            : userInfo.driverRatingCount;
+        uint256 totalRating = isRider
+            ? userInfo.riderTotalRating
+            : userInfo.driverTotalRating;
+
+        if (ratingCount == 0) {
             return 0;
         } else {
-            return userInfo.totalRating / userInfo.ratingCount;
+            return totalRating / ratingCount;
         }
     }
 }

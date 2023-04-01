@@ -59,7 +59,7 @@ contract RideSharing {
         int256 endLat,
         int256 endLong
     ) public {
-        (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
+        (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(!isDriver, "Only riders can create rides.");
         require(
             riderRideIndex[msg.sender] == 0,
@@ -85,7 +85,7 @@ contract RideSharing {
      * @dev Allows a driver to accept a ride with a given ride index
      */
     function acceptRide(uint rideIndex) public {
-        (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
+        (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(isDriver, "Only drivers can accept rides.");
         require(
             driverRideIndex[msg.sender] == 0,
@@ -104,17 +104,32 @@ contract RideSharing {
     /**
      * @dev Allows the driver and drive to mark a ride as completed
      */
-    function completeRide(uint rideIndex) public {
+    function completeRide(uint rideIndex, uint8 rating) public {
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+
         require(
-            msg.sender == rideInfo.rider || msg.sender == rideInfo.driver,
+            (msg.sender == rideInfo.rider) || (msg.sender == rideInfo.driver),
             "Only rider or driver can complete the ride."
         );
 
+        require(!rideInfo.isCompleted, "Ride has already been completed");
+
+        bool isRider = rideInfo.rider == msg.sender;
+
+        userContract.rateUser(
+            isRider ? rideInfo.driver : rideInfo.rider,
+            rating,
+            isRider
+        );
+
         rideContract.completeRide(rideIndex);
-        riderRideIndex[rideInfo.rider] = 0;
-        driverRideIndex[rideInfo.driver] = 0;
+
+        if (isRider) {
+            riderRideIndex[msg.sender] = 0;
+        } else {
+            driverRideIndex[msg.sender] = 0;
+        }
     }
 
     /**
@@ -160,7 +175,7 @@ contract RideSharing {
         int256 driverLat,
         int256 driverLong
     ) public view returns (address[] memory) {
-        (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
+        (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(isDriver, "Only drivers can get available rides.");
 
         uint[] memory distances = new uint[](ridesList.length);
