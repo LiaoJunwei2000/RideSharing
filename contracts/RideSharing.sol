@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./User.sol";
 import "./StructDeclaration.sol";
+import "./User.sol";
 import "./Ride.sol";
 
 contract RideSharing {
@@ -35,6 +35,9 @@ contract RideSharing {
         }
     }
 
+    /**
+     * @dev function to calculate the distance between two sets of coordinates
+     */
     function getDistance(
         int256 lat1,
         int256 long1,
@@ -46,6 +49,9 @@ contract RideSharing {
         return uint(1000 * sqrt((uint((dLat * dLat) + (dLong * dLong)))));
     }
 
+    /**
+     * @dev creates a ride request with a given fare and coordinates
+     */
     function createRide(
         uint256 fare,
         int256 startLat,
@@ -75,6 +81,9 @@ contract RideSharing {
         emit RideCreated(rideContractAddress, rideIndex, msg.sender);
     }
 
+    /**
+     * @dev Allows a driver to accept a ride with a given ride index
+     */
     function acceptRide(uint rideIndex) public {
         (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
         require(isDriver, "Only drivers can accept rides.");
@@ -92,6 +101,9 @@ contract RideSharing {
         emit RideAccepted(rideIndex, msg.sender);
     }
 
+    /**
+     * @dev Allows the driver and drive to mark a ride as completed
+     */
     function completeRide(uint rideIndex) public {
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
@@ -105,6 +117,9 @@ contract RideSharing {
         driverRideIndex[rideInfo.driver] = 0;
     }
 
+    /**
+     * @dev Allows the rider to cancel a ride
+     */
     function cancelRide(uint rideIndex) public {
         Ride rideContract = Ride(rideContractAddress);
 
@@ -123,14 +138,24 @@ contract RideSharing {
         emit RideCancelled(rideIndex, msg.sender);
     }
 
+    /**
+     * @dev returns the ride index for a given index if it exists otherwise  0
+     */
     function getRideIndex(uint index) public view returns (uint) {
         return index < ridesList.length ? index : 0;
     }
 
+    /**
+     * @dev returns the total number of rides created
+     */
     function getRideCount() public view returns (uint) {
         return ridesList.length;
     }
 
+    /**
+     * @dev Returns a list of the 5 nearest available rides for a driver based on their location
+     *
+     */
     function getAvailableRides(
         int256 driverLat,
         int256 driverLong
