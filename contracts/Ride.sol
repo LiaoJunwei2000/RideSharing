@@ -10,7 +10,7 @@ contract Ride {
         int256 endLat;
         int256 endLong;
         bool isCompleted;
-        bool cancelled;
+        bool isCancelled;
     }
 
     RideInfo[] public rides;
@@ -32,7 +32,7 @@ contract Ride {
             endLat: endLat,
             endLong: endLong,
             isCompleted: false,
-            cancelled: false
+            isCancelled: false
         });
 
         rides.push(newRide);
@@ -49,12 +49,9 @@ contract Ride {
 
     function cancelRide(uint rideIndex) public {
         RideInfo storage rideInfo = rides[rideIndex];
-        require(
-            msg.sender == rideInfo.rider,
-            "Only the rider can cancel the ride."
-        );
-        require(!rideInfo.cancelled, "Ride is already cancelled.");
-        rideInfo.cancelled = true;
+
+        require(!rideInfo.isCancelled, "Ride is already cancelled.");
+        rideInfo.isCancelled = true;
     }
 
     function getRideDetails(
@@ -70,7 +67,8 @@ contract Ride {
             int256 startLong,
             int256 endLat,
             int256 endLong,
-            bool isCompleted
+            bool isCompleted,
+            bool isCancelled
         )
     {
         RideInfo memory rideInfo = rides[rideIndex];
@@ -82,7 +80,8 @@ contract Ride {
             rideInfo.startLong,
             rideInfo.endLat,
             rideInfo.endLong,
-            rideInfo.isCompleted
+            rideInfo.isCompleted,
+            rideInfo.isCancelled
         );
     }
 }

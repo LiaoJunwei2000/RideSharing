@@ -12,6 +12,16 @@ contract User {
     }
 
     mapping(address => UserInfo) private users;
+    mapping(address => bool) private registered;
+
+    event UserRegistered(
+        address indexed user,
+        string name,
+        string email,
+        bool isDriver,
+        string carModel,
+        string carPlate
+    );
 
     function registerUser(
         string memory name,
@@ -20,11 +30,21 @@ contract User {
         string memory carModel,
         string memory carPlate
     ) public {
+        require(!registered[msg.sender], "Account is already registered.");
         users[msg.sender] = UserInfo(
             name,
             email,
             0,
             0,
+            isDriver,
+            carModel,
+            carPlate
+        );
+        registered[msg.sender] = true;
+        emit UserRegistered(
+            msg.sender,
+            name,
+            email,
             isDriver,
             carModel,
             carPlate

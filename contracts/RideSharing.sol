@@ -17,6 +17,8 @@ contract RideSharing {
     );
     event RideAccepted(uint indexed rideIndex, address indexed driver);
 
+    event RideCancelled(uint indexed rideIndex, address indexed rider);
+
     constructor(address _userContract, address _rideContractAddress) public {
         userContract = User(_userContract);
         rideContractAddress = _rideContractAddress;
@@ -80,7 +82,9 @@ contract RideSharing {
         );
 
         Ride rideContract = Ride(rideContractAddress);
-        (, address driver, , , , , , ) = rideContract.getRideDetails(rideIndex);
+        (, address driver, , , , , , , ) = rideContract.getRideDetails(
+            rideIndex
+        );
         require(driver == address(0), "Ride already has a driver.");
 
         rideContract.setDriver(rideIndex, msg.sender);
@@ -90,7 +94,7 @@ contract RideSharing {
 
     function completeRide(uint rideIndex) public {
         Ride rideContract = Ride(rideContractAddress);
-        (address rider, address driver, , , , , , ) = rideContract
+        (address rider, address driver, , , , , , , ) = rideContract
             .getRideDetails(rideIndex);
         require(
             msg.sender == rider || msg.sender == driver,
@@ -103,12 +107,10 @@ contract RideSharing {
     }
 
     function cancelRide(uint rideIndex) public {
-        (, , bool isDriver, ) = userContract.getUserInfo(msg.sender);
-        require(!isDriver, "Only riders can cancel rides.");
-
         Ride rideContract = Ride(rideContractAddress);
-        (address rider, address driver, , , , , , ) = rideContract
+        (address rider, address driver, , , , , , , ) = rideContract
             .getRideDetails(rideIndex);
+
         require(rider == msg.sender, "Only the rider can cancel the ride.");
         require(
             driver == address(0),
@@ -116,6 +118,7 @@ contract RideSharing {
         );
 
         rideContract.cancelRide(rideIndex);
+        emit RideCancelled(rideIndex, rider);
     }
 
     function getRideIndex(uint index) public view returns (uint) {
@@ -146,9 +149,10 @@ contract RideSharing {
                 int256 startLong,
                 ,
                 ,
-                bool isCompleted
+                bool isCompleted,
+                bool isCancelled
             ) = rideContract.getRideDetails(i);
-            if (currentDriver == address(0) && !isCompleted) {
+            if (currentDriver == address(0) && !isCompleted && !isCancelled) {
                 uint distance = getDistance(
                     driverLat,
                     driverLong,
