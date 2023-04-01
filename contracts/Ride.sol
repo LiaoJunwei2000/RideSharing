@@ -1,19 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract Ride {
-    struct RideInfo {
-        address rider;
-        address driver;
-        uint256 fare;
-        int256 startLat;
-        int256 startLong;
-        int256 endLat;
-        int256 endLong;
-        bool isCompleted;
-        bool isCancelled;
-    }
+import "./StructDeclaration.sol";
 
+contract Ride {
     RideInfo[] public rides;
 
     function createRide(
@@ -57,32 +47,7 @@ contract Ride {
 
     function getRideDetails(
         uint rideIndex
-    )
-        public
-        view
-        returns (
-            address rider,
-            address driver,
-            uint256 fare,
-            int256 startLat,
-            int256 startLong,
-            int256 endLat,
-            int256 endLong,
-            bool isCompleted,
-            bool isCancelled
-        )
-    {
-        RideInfo memory rideInfo = rides[rideIndex];
-        return (
-            rideInfo.rider,
-            rideInfo.driver,
-            rideInfo.fare,
-            rideInfo.startLat,
-            rideInfo.startLong,
-            rideInfo.endLat,
-            rideInfo.endLong,
-            rideInfo.isCompleted,
-            rideInfo.isCancelled
-        );
+    ) public view returns (RideInfo memory) {
+        return rides[rideIndex];
     }
 }

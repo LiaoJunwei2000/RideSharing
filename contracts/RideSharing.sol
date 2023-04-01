@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./User.sol";
+import "./StructDeclaration.sol";
 import "./Ride.sol";
 
 contract RideSharing {
@@ -83,10 +84,8 @@ contract RideSharing {
         );
 
         Ride rideContract = Ride(rideContractAddress);
-        (, address driver, , , , , , , ) = rideContract.getRideDetails(
-            rideIndex
-        );
-        require(driver == address(0), "Ride already has a driver.");
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+        require(rideInfo.driver == address(0), "Ride already has a driver.");
 
         rideContract.setDriver(rideIndex, msg.sender);
         driverRideIndex[msg.sender] = rideIndex;
@@ -95,31 +94,33 @@ contract RideSharing {
 
     function completeRide(uint rideIndex) public {
         Ride rideContract = Ride(rideContractAddress);
-        (address rider, address driver, , , , , , , ) = rideContract
-            .getRideDetails(rideIndex);
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
         require(
-            msg.sender == rider || msg.sender == driver,
+            msg.sender == rideInfo.rider || msg.sender == rideInfo.driver,
             "Only rider or driver can complete the ride."
         );
 
         rideContract.completeRide(rideIndex);
-        riderRideIndex[rider] = 0;
-        driverRideIndex[driver] = 0;
+        riderRideIndex[rideInfo.rider] = 0;
+        driverRideIndex[rideInfo.driver] = 0;
     }
 
     function cancelRide(uint rideIndex) public {
         Ride rideContract = Ride(rideContractAddress);
-        (address rider, address driver, , , , , , , ) = rideContract
-            .getRideDetails(rideIndex);
 
-        require(rider == msg.sender, "Only the rider can cancel the ride.");
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+
         require(
-            driver == address(0),
+            rideInfo.rider == msg.sender,
+            "Only the rider can cancel the ride."
+        );
+        require(
+            rideInfo.driver == address(0),
             "Ride can only be cancelled with no driver."
         );
 
         rideContract.cancelRide(rideIndex);
-        emit RideCancelled(rideIndex, rider);
+        emit RideCancelled(rideIndex, msg.sender);
     }
 
     function getRideIndex(uint index) public view returns (uint) {
@@ -142,23 +143,18 @@ contract RideSharing {
 
         for (uint i = 0; i < ridesList.length; i++) {
             Ride rideContract = Ride(ridesList[i]);
-            (
-                ,
-                address currentDriver,
-                ,
-                int256 startLat,
-                int256 startLong,
-                ,
-                ,
-                bool isCompleted,
-                bool isCancelled
-            ) = rideContract.getRideDetails(i);
-            if (currentDriver == address(0) && !isCompleted && !isCancelled) {
+            RideInfo memory rideInfo = rideContract.getRideDetails(i);
+
+            if (
+                rideInfo.driver == address(0) &&
+                !rideInfo.isCompleted &&
+                !rideInfo.isCancelled
+            ) {
                 uint distance = getDistance(
                     driverLat,
                     driverLong,
-                    startLat,
-                    startLong
+                    rideInfo.startLat,
+                    rideInfo.startLong
                 );
                 distances[i] = distance;
                 sortedRides[i] = ridesList[i];
