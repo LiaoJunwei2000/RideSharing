@@ -245,25 +245,87 @@ contract("RideSharing", (accounts) => {
       startLong,
       endLat,
       endLong,
-      { from: accounts[1] }
+      { from: rider }
     );
 
     const rideIndex = rideCreationResult.logs[0].args.rideIndex.toNumber();
     const rideContractAddress = rideCreationResult.logs[0].args.rideContract;
 
     // Cancel the ride
-    try {
-      await rideSharingContract.cancelRide(rideIndex, {
-        from: accounts[1],
-      });
-    } catch (error) {
-      console.log("Error during cancelRide: ", error.toString());
-    }
+
+    await rideSharingContract.cancelRide(rideIndex, {
+      from: rider,
+    });
 
     // Check if the ride is cancelled
     const ride = await Ride.at(rideContractAddress);
     const rideDetails = await ride.getRideDetails(rideIndex);
 
     assert.equal(rideDetails.isCancelled, true, "Ride should be cancelled");
+  });
+
+  it("should not allow rider to create multiple rides at the same time", async () => {
+    const fare = 100;
+    const startLat = 12345678;
+    const startLong = 23456789;
+    const endLat = 34567890;
+    const endLong = 45678901;
+
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+    await rideSharingContract.acceptRide(0, { from: driver });
+
+    await truffleAssert.reverts(
+      rideSharingContract.createRide(
+        fare,
+        startLat,
+        startLong,
+        endLat,
+        endLong,
+        { from: rider }
+      ),
+      "Rider already has an active ride."
+    );
+  });
+
+  it("should not allow driver to accept multiple rides at the same time", async () => {
+    const fare = 100;
+    const startLat = 12345678;
+    const startLong = 23456789;
+    const endLat = 34567890;
+    const endLong = 45678901;
+
+    await userContract.registerUser(
+      "David",
+      "david@example.com",
+      false,
+      "",
+      "",
+      { from: accounts[3] }
+    );
+
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+    await rideSharingContract.acceptRide(0, { from: driver });
+
+    rideSharingContract.createRide(fare, startLat, startLong, endLat, endLong, {
+      from: accounts[3],
+    }),
+      await truffleAssert.reverts(
+        rideSharingContract.acceptRide(1, { from: driver }),
+        "Driver already has an active ride."
+      );
   });
 });

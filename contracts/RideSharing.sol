@@ -8,8 +8,9 @@ import "./Ride.sol";
 contract RideSharing {
     User private userContract;
     address public rideContractAddress;
-    mapping(address => uint) public riderRideIndex;
-    mapping(address => uint) public driverRideIndex;
+    mapping(address => bool) public riderHasActiveRide;
+    mapping(address => bool) public driverHasActiveRide;
+
     address[] public ridesList;
 
     event RideCreated(
@@ -62,7 +63,7 @@ contract RideSharing {
         (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(!isDriver, "Only riders can create rides.");
         require(
-            riderRideIndex[msg.sender] == 0,
+            !riderHasActiveRide[msg.sender],
             "Rider already has an active ride."
         );
 
@@ -76,7 +77,7 @@ contract RideSharing {
             endLong
         );
 
-        riderRideIndex[msg.sender] = rideIndex;
+        riderHasActiveRide[msg.sender] = true;
         ridesList.push(rideContractAddress);
         emit RideCreated(rideContractAddress, rideIndex, msg.sender);
     }
@@ -88,7 +89,7 @@ contract RideSharing {
         (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(isDriver, "Only drivers can accept rides.");
         require(
-            driverRideIndex[msg.sender] == 0,
+            !driverHasActiveRide[msg.sender],
             "Driver already has an active ride."
         );
 
@@ -97,7 +98,7 @@ contract RideSharing {
         require(rideInfo.driver == address(0), "Ride already has a driver.");
 
         rideContract.setDriver(rideIndex, msg.sender);
-        driverRideIndex[msg.sender] = rideIndex;
+        driverHasActiveRide[msg.sender] = true;
         emit RideAccepted(rideIndex, msg.sender);
     }
 
@@ -126,9 +127,9 @@ contract RideSharing {
         rideContract.completeRide(rideIndex);
 
         if (isRider) {
-            riderRideIndex[msg.sender] = 0;
+            riderHasActiveRide[msg.sender] = false;
         } else {
-            driverRideIndex[msg.sender] = 0;
+            driverHasActiveRide[msg.sender] = false;
         }
     }
 
