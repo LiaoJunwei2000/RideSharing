@@ -13,6 +13,12 @@ contract RideToken {
         owner = msg.sender;
     }
 
+    event RideTokenTransfer(
+        address indexed sender,
+        address indexed recipient,
+        uint256 amt
+    );
+
     /**
      * @dev Function to give RT to the recipient for a given wei amount
      * @param recipient address of the recipient that wants to buy the RT
@@ -23,7 +29,7 @@ contract RideToken {
         address recipient,
         uint256 weiAmt
     ) public returns (uint256) {
-        uint256 amt = weiAmt / (1000000000000000000 / 100); // Convert weiAmt to Dice Token
+        uint256 amt = weiAmt / (1000000000000000000 / 1000); // Convert weiAmt to Dice Token
         erc20Contract.mint(recipient, amt);
         return amt;
     }
@@ -46,15 +52,19 @@ contract RideToken {
     function transferCredit(address recipient, uint256 amt) public {
         // Transfers from tx.origin to receipient
         erc20Contract.transfer(recipient, amt);
+        emit RideTokenTransfer(tx.origin, recipient, amt);
     }
 
-    function transferCreditFrom(address sender, address recipient, uint256 amt) public {
-        // Transfers from tx.origin to receipient
+    function transferCreditFrom(
+        address sender,
+        address recipient,
+        uint256 amt
+    ) public {
         erc20Contract.transferFrom(sender, recipient, amt);
+        emit RideTokenTransfer(sender, recipient, amt);
     }
 
-    function approve(address _spender, uint256 _value) public{
-      erc20Contract.approve(_spender, _value);
+    function approve(address _spender, uint256 _value) public {
+        erc20Contract.approve(_spender, _value);
     }
-
 }

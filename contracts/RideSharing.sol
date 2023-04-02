@@ -26,10 +26,16 @@ contract RideSharing {
 
     event RideStarted(uint indexed rideIndex);
 
+    event UserMarkedRideAsCompleted(
+        uint indexed rideIndex,
+        address indexed user
+    );
+
     event RideCompleted(uint indexed rideIndex);
 
-    event buyCredit(uint256 RTAmt); //event of minting of RT to the msg.sender
-    event returnCredits(uint256 RTAmt); //event of returning of RT of the msg.sender
+    event BuyCredit(uint256 rideTokenAmt); //event of minting of RT to the msg.sender
+
+    event ReturnCredits(uint256 rideTokenAmt); //event of returning of RT of the msg.sender
 
     constructor(
         address _rideTokenContractAddress,
@@ -39,44 +45,6 @@ contract RideSharing {
         rideTokenContractAddress = _rideTokenContractAddress;
         userContract = User(_userContract);
         rideContractAddress = _rideContractAddress;
-    }
-
-    /**
-     * @dev Takes in Eth from the msg.sender and gives him DiceToken in return
-     */
-    function getRT() public payable {
-        // Hint 1: default currency for msg.value is in wei
-        require(msg.value >= 1E16, "At least 0.01ETH needed to get RT");
-        uint256 amt = msg.value / (1000000000000000000 / 100);
-        RideToken rideTokenContract = RideToken(rideTokenContractAddress);
-        rideTokenContract.getCredit(msg.sender, msg.value);
-        emit buyCredit(amt);
-    }
-
-    /**
-     * @dev Function to check the amount of RT the msg.sender has
-     * @return A uint256 representing the amount of RT owned by the msg.sender.
-     */
-    function checkRT() public view returns (uint256) {
-        RideToken rideTokenContract = RideToken(rideTokenContractAddress);
-        return rideTokenContract.checkCredit(msg.sender);
-    }
-
-    /**
-     * @dev Function to return the RT to the casino and get ether back at the conversion rate of 0.009 Eth per RT
-     */
-    function returnRT() public {
-        // Hint 1: in recipient.transfer(amt), the amt is in wei,
-        //         which you can convert from eth at: 1eth = 1000000000000000000 wei
-        // Hint 2: Contracts address can be accessed with address(this)
-        // Hint 3: You can just transfer the RT back to this contracts address, there is no need to burn the RT
-        uint256 rtAmt = checkRT();
-        RideToken rideTokenContract = RideToken(rideTokenContractAddress);
-        rideTokenContract.transferCredit(address(this), rtAmt);
-        address payable recipient = payable(msg.sender);
-        uint256 amountReturn = (rtAmt * (1000000000000000000 / 100) * 9) / 10;
-        recipient.transfer(amountReturn);
-        emit returnCredits(rtAmt);
     }
 
     function sqrt(uint x) private pure returns (uint y) {
@@ -103,6 +71,41 @@ contract RideSharing {
     }
 
     /**
+     * @dev Takes in Eth from the msg.sender and gives him DiceToken in return
+     */
+    function getRT() public payable {
+        // Hint 1: default currency for msg.value is in wei
+        require(msg.value >= 1E15, "At least 0.001ETH needed to get RT");
+        uint256 amt = msg.value / (1000000000000000000 / 1000);
+        RideToken rideTokenContract = RideToken(rideTokenContractAddress);
+        rideTokenContract.getCredit(msg.sender, msg.value);
+        emit BuyCredit(amt);
+    }
+
+    /**
+     * @dev Function to check the amount of RT the msg.sender has
+     * @return A uint256 representing the amount of RT owned by the msg.sender.
+     */
+    function checkRT() public view returns (uint256) {
+        RideToken rideTokenContract = RideToken(rideTokenContractAddress);
+        return rideTokenContract.checkCredit(msg.sender);
+    }
+
+    /**
+     * @dev Function to return the RT to the casino and get ether back at the conversion rate of 0.009 Eth per RT
+     */
+    function returnRT() public {
+        uint256 rtAmt = checkRT();
+        RideToken rideTokenContract = RideToken(rideTokenContractAddress);
+        // Transfer RT from reciepent to contract owner
+        rideTokenContract.transferCredit(address(this), rtAmt);
+        address payable recipient = payable(msg.sender);
+        uint256 amountReturn = (rtAmt * (1000000000000000000 / 100) * 9) / 10;
+        recipient.transfer(amountReturn);
+        emit ReturnCredits(rtAmt);
+    }
+
+    /**
      * @dev creates a ride request with a given fare and coordinates
      */
     function createRide(
@@ -114,13 +117,11 @@ contract RideSharing {
     ) public {
         (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(!isDriver, "Only riders can create rides.");
-        require(checkRT()>=fare, "Not enough RT in your account");
+        require(checkRT() >= fare, "Not enough RideToken in your account");
         require(
             !riderHasActiveRide[msg.sender],
             "Rider already has an active ride."
         );
-        RideToken rideTokenContract  = RideToken(rideTokenContractAddress);
-        rideTokenContract.approve(address(this), fare);
         Ride rideContract = Ride(rideContractAddress);
         uint rideIndex = rideContract.createRide(
             msg.sender,
@@ -153,6 +154,7 @@ contract RideSharing {
 
         rideContract.setDriver(rideIndex, msg.sender);
         driverHasActiveRide[msg.sender] = true;
+
         emit RideAccepted(rideIndex, msg.sender);
     }
 
@@ -185,6 +187,7 @@ contract RideSharing {
     function completeRide(uint rideIndex, uint8 rating) public {
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+        RideToken rideTokenContract = RideToken(rideTokenContractAddress);
 
         require(
             rideInfo.rideStatus == RideStatus.Started,
@@ -199,6 +202,11 @@ contract RideSharing {
         require(
             rideInfo.rideStatus != RideStatus.Completed,
             "Ride has already been completed"
+        );
+
+        require(
+            msg.sender == rideInfo.driver || rideInfo.driverCompleted,
+            "driver must complete the ride before Rider completes"
         );
 
         bool isRider = rideInfo.rider == msg.sender;
@@ -221,13 +229,8 @@ contract RideSharing {
             rideContract.getRideDetails(rideIndex).rideStatus ==
             RideStatus.Completed
         ) {
-            //transfer RT from rider to driver
-            RideToken rideTokenContract = RideToken(rideTokenContractAddress);
-            rideTokenContract.transferCreditFrom(
-                rideInfo.rider,
-                rideInfo.driver,
-                rideInfo.fare
-            );
+            //transfer RT from RideSharing Contract to driver
+            rideTokenContract.transferCredit(rideInfo.driver, rideInfo.fare);
             emit RideCompleted(rideIndex);
         }
     }

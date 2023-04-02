@@ -73,6 +73,7 @@ contract ERC20 {
     );
     event Mint(address indexed to, uint256 amount);
     event MintFinished();
+    event Check(address indexed add);
 
     /**
      * @dev Gets the balance of the specified address.
@@ -153,16 +154,23 @@ contract ERC20 {
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-      require(_to != address(0));
-      require(_value <= balances[_from], "From doesn't have enough balance");
-      require(_value <= allowed[_from][tx.origin], "Not allowed to spend this much");
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) public returns (bool) {
+        require(_to != address(0));
+        require(_value <= balances[_from], "From doesn't have enough balance");
+        require(
+            _value <= allowed[_from][tx.origin],
+            "Not allowed to spend this much"
+        );
 
-      balances[_from] = balances[_from].sub(_value);
-      balances[_to] = balances[_to].add(_value);
-      allowed[_from][tx.origin] = allowed[_from][tx.origin].sub(_value);
-      emit Transfer(_from, _to, _value);
-      return true;
+        balances[_from] = balances[_from].sub(_value);
+        balances[_to] = balances[_to].add(_value);
+        allowed[_from][tx.origin] = allowed[_from][tx.origin].sub(_value);
+        emit Transfer(_from, _to, _value);
+        return true;
     }
 
     /**
@@ -176,9 +184,9 @@ contract ERC20 {
      * @param _value The amount of tokens to be spent.
      */
     function approve(address _spender, uint256 _value) public returns (bool) {
-      allowed[msg.sender][_spender] = _value;
-      emit Approval(msg.sender, _spender, _value);
-      return true;
+        allowed[msg.sender][_spender] = _value;
+        emit Approval(msg.sender, _spender, _value);
+        return true;
     }
 
     // /**
