@@ -73,7 +73,6 @@ contract ERC20 {
     );
     event Mint(address indexed to, uint256 amount);
     event MintFinished();
-    event Check(address indexed add);
 
     /**
      * @dev Gets the balance of the specified address.
