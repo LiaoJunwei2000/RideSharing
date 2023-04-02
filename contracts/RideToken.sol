@@ -47,4 +47,14 @@ contract RideToken {
         // Transfers from tx.origin to receipient
         erc20Contract.transfer(recipient, amt);
     }
+
+    function transferCreditFrom(address sender, address recipient, uint256 amt) public {
+        // Transfers from tx.origin to receipient
+        erc20Contract.transferFrom(sender, recipient, amt);
+    }
+
+    function approve(address _spender, uint256 _value) public{
+      erc20Contract.approve(_spender, _value);
+    }
+
 }

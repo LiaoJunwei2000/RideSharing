@@ -6,14 +6,16 @@ var assert = require("assert");
 const User = artifacts.require("User");
 const RideSharing = artifacts.require("RideSharing");
 const Ride = artifacts.require("Ride");
-
+const RideToken = artifacts.require("RideToken");
+const oneEth = new BigNumber(1000000000000000000);
 contract("RideSharing", (accounts) => {
   let userContract;
   let rideSharingContract;
   let rideContract;
+  let rideTokenContract;
   const rider = accounts[1];
   const driver = accounts[2];
-  const fare = 100;
+  const fare = 10;
   const startLat = 12345678;
   const startLong = 23456789;
   const endLat = 34567890;
@@ -22,7 +24,9 @@ contract("RideSharing", (accounts) => {
   beforeEach(async () => {
     userContract = await User.new();
     rideContract = await Ride.new();
+    rideTokenContract = await RideToken.new();
     rideSharingContract = await RideSharing.new(
+      rideTokenContract.address,
       userContract.address,
       rideContract.address
     );
@@ -35,6 +39,11 @@ contract("RideSharing", (accounts) => {
       "",
       { from: rider }
     );
+    await rideSharingContract.getRT(
+      { from: rider,
+      value:oneEth, }
+    );
+
     await userContract.registerUser(
       "Driver Name",
       "driver@example.com",
@@ -46,6 +55,9 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should create a new ride", async () => {
+
+
+
     await rideSharingContract.createRide(
       fare,
       startLat,
@@ -226,25 +238,49 @@ contract("RideSharing", (accounts) => {
       {
         from: accounts[7],
       }
+    );    
+    
+    await rideSharingContract.getRT(
+      { from: accounts[1],
+      value:oneEth.multipliedBy(2), }
     );
-
+    await rideSharingContract.getRT(
+      { from: accounts[3],
+      value:oneEth.multipliedBy(2), }
+    );
+    await rideSharingContract.getRT(
+      { from: accounts[4],
+      value:oneEth.multipliedBy(2), }
+    );
+    await rideSharingContract.getRT(
+      { from: accounts[5],
+      value:oneEth.multipliedBy(2), }
+    );
+    await rideSharingContract.getRT(
+      { from: accounts[6],
+      value:oneEth.multipliedBy(2), }
+    );
+    await rideSharingContract.getRT(
+      { from: accounts[7],
+      value:oneEth.multipliedBy(2), }
+    );
     // Create rides
-    let ride1 = await rideSharingContract.createRide(500, 10, 10, 20, 20, {
+    let ride1 = await rideSharingContract.createRide(50, 10, 10, 20, 20, {
       from: accounts[1],
     });
-    let ride2 = await rideSharingContract.createRide(600, 15, 15, 25, 25, {
+    let ride2 = await rideSharingContract.createRide(60, 15, 15, 25, 25, {
       from: accounts[3],
     });
-    let ride3 = await rideSharingContract.createRide(700, 20, 20, 30, 30, {
+    let ride3 = await rideSharingContract.createRide(70, 20, 20, 30, 30, {
       from: accounts[4],
     });
-    let ride4 = await rideSharingContract.createRide(800, 30, 30, 40, 40, {
+    let ride4 = await rideSharingContract.createRide(80, 30, 30, 40, 40, {
       from: accounts[5],
     });
-    let ride5 = await rideSharingContract.createRide(900, 40, 40, 50, 50, {
+    let ride5 = await rideSharingContract.createRide(90, 40, 40, 50, 50, {
       from: accounts[6],
     });
-    let ride6 = await rideSharingContract.createRide(1000, 50, 50, 60, 60, {
+    let ride6 = await rideSharingContract.createRide(100, 50, 50, 60, 60, {
       from: accounts[7],
     });
 
@@ -333,6 +369,11 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should not allow driver to accept multiple rides at the same time", async () => {
+    await rideSharingContract.getRT(
+      { from: accounts[3],
+      value:oneEth.multipliedBy(2), }
+    );
+
     await userContract.registerUser(
       "David",
       "david@example.com",
