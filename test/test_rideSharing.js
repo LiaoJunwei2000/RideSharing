@@ -169,7 +169,7 @@ contract("RideSharing", (accounts) => {
     );
   });
 
-  it("should not ride to be started if rider has not accepted the driver", async () => {
+  it("should not allow ride to be started if rider has not accepted the driver", async () => {
     await rideSharingContract.createRide(
       fare,
       startLat,
