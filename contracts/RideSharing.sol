@@ -111,7 +111,7 @@ contract RideSharing {
     }
 
     /**
-     * @dev Function to return the RT to the casino and get ether back at the conversion rate of 0.009 Eth per RT
+     * @dev Function to return the RT and get ether back at the conversion rate of 0.009 Eth per RT
      */
     function returnRT() public {
         uint256 rtAmt = checkRT();
@@ -123,7 +123,7 @@ contract RideSharing {
         // Transfer RT from reciepent to contract owner
         rideTokenContract.transferCredit(address(this), rtAmt);
         address payable recipient = payable(msg.sender);
-        uint256 amountReturn = (rtAmt * (1000000000000000000 / 100) * 9) / 10;
+        uint256 amountReturn = (rtAmt * (1000000000000000000 / 1000) * 9) / 10;
         recipient.transfer(amountReturn);
         emit ReturnCredits(rtAmt);
     }

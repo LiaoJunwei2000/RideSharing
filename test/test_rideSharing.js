@@ -1,7 +1,7 @@
 const _deploy_contracts = require("../migrations/2_deploy_contracts");
 const truffleAssert = require("truffle-assertions"); // npm truffle-assertions
 const BigNumber = require("bignumber.js"); // npm install bignumber.js
-var assert = require("assert");
+const assert = require("assert");
 
 const User = artifacts.require("User");
 const RideSharing = artifacts.require("RideSharing");
@@ -61,6 +61,32 @@ contract("RideSharing", (accounts) => {
     truffleAssert.eventEmitted(tx, "BuyCredit", (ev) => {
       return ev.rideTokenAmt == 1;
     });
+  });
+
+  it("should allow users to withdraw RideToken to ETH", async () => {
+    await rideSharingContract.getRT({
+      from: accounts[6],
+      value: (10 * oneEth) / 1000,
+    });
+
+    const initialBalance = await web3.eth.getBalance(accounts[6]);
+
+    const tx = await rideSharingContract.returnRT({
+      from: accounts[6],
+    });
+
+    const finalBalance = await web3.eth.getBalance(accounts[6]);
+
+    const difference = finalBalance - initialBalance;
+
+    truffleAssert.eventEmitted(
+      tx,
+      "ReturnCredits",
+      (ev) => ev.rideTokenAmt == 10
+    );
+
+    assert.equal(difference < (9 * oneEth) / 1000, true);
+    assert.equal(difference > (8 * oneEth) / 1000, true);
   });
 
   it("should create a new ride", async () => {
@@ -663,6 +689,4 @@ contract("RideSharing", (accounts) => {
 
     assert.equal(driverInfo["4"].words[0], 2);
   });
-
-  // it("");
 });

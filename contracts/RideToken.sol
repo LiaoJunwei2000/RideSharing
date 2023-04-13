@@ -29,7 +29,7 @@ contract RideToken {
         address recipient,
         uint256 weiAmt
     ) public returns (uint256) {
-        uint256 amt = weiAmt / (1000000000000000000 / 1000); // Convert weiAmt to Dice Token
+        uint256 amt = weiAmt / (1000000000000000000 / 1000); // Convert weiAmt to Ride Token
         erc20Contract.mint(recipient, amt);
         return amt;
     }
