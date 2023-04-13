@@ -51,6 +51,26 @@ contract RideSharing {
         rideContractAddress = _rideContractAddress;
     }
 
+    modifier riderOnly(uint rideIndex) {
+        Ride rideContract = Ride(rideContractAddress);
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+        require(
+            rideInfo.rider == msg.sender,
+            "Only rider can call this function."
+        );
+        _;
+    }
+
+    modifier riderOrDriverOnly(uint rideIndex) {
+        Ride rideContract = Ride(rideContractAddress);
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+        require(
+            rideInfo.driver == msg.sender || rideInfo.rider == msg.sender,
+            "Only rider or driver can call this function."
+        );
+        _;
+    }
+
     function sqrt(uint x) private pure returns (uint y) {
         uint z = (x + 1) / 2;
         y = x;
@@ -166,13 +186,12 @@ contract RideSharing {
         emit RideAccepted(rideIndex, msg.sender);
     }
 
-    function acceptDriver(uint rideIndex) public {
+    function acceptDriver(uint rideIndex) public riderOnly(rideIndex) {
         (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(!isDriver, "Only riders can accept drivers.");
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
         require(rideInfo.driver != address(0), "Must have a driver to accept");
-        require(rideInfo.rider == msg.sender, "Only rider can accept");
 
         rideContract.acceptDriver(rideIndex);
 
@@ -184,13 +203,12 @@ contract RideSharing {
         }
     }
 
-    function rejectDriver(uint rideIndex) public {
+    function rejectDriver(uint rideIndex) public riderOnly(rideIndex) {
         (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
         require(!isDriver, "Only riders can reject drivers.");
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
         require(rideInfo.driver != address(0), "Must have a driver to reject");
-        require(rideInfo.rider == msg.sender, "Only rider can reject");
 
         rideContract.unsetDriver(rideIndex);
         driverHasActiveRide[rideInfo.driver] = false;
@@ -198,14 +216,9 @@ contract RideSharing {
         emit RideRejected(rideIndex);
     }
 
-    function startRide(uint rideIndex) public {
+    function startRide(uint rideIndex) public riderOrDriverOnly(rideIndex) {
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
-
-        require(
-            rideInfo.rider == msg.sender || rideInfo.driver == msg.sender,
-            "Only the rider or driver can start the ride."
-        );
 
         require(
             rideInfo.driver != address(0),
@@ -229,7 +242,10 @@ contract RideSharing {
     /**
      * @dev Allows the driver and drive to mark a ride as completed
      */
-    function completeRide(uint rideIndex, uint8 rating) public {
+    function completeRide(
+        uint rideIndex,
+        uint8 rating
+    ) public riderOrDriverOnly(rideIndex) {
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
         RideToken rideTokenContract = RideToken(rideTokenContractAddress);
@@ -237,11 +253,6 @@ contract RideSharing {
         require(
             rideInfo.rideStatus == RideStatus.Started,
             "Ride must be in the Started status to be completed."
-        );
-
-        require(
-            (msg.sender == rideInfo.rider) || (msg.sender == rideInfo.driver),
-            "Only rider or driver can complete the ride."
         );
 
         require(
@@ -283,15 +294,11 @@ contract RideSharing {
     /**
      * @dev Allows the rider to cancel a ride
      */
-    function cancelRide(uint rideIndex) public {
+    function cancelRide(uint rideIndex) public riderOnly(rideIndex) {
         Ride rideContract = Ride(rideContractAddress);
 
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
 
-        require(
-            rideInfo.rider == msg.sender,
-            "Only the rider can cancel the ride."
-        );
         require(
             rideInfo.driver == address(0),
             "Ride can only be cancelled with no driver."

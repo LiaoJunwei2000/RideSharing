@@ -272,7 +272,7 @@ contract("RideSharing", (accounts) => {
 
     await truffleAssert.reverts(
       rideSharingContract.startRide(rideIndex, { from: accounts[3] }),
-      "Only the rider or driver can start the ride."
+      "Only rider or driver can call this function."
     );
   });
 
