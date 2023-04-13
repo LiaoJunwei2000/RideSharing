@@ -265,7 +265,7 @@ contract RideSharing {
         userContract.rateUser(
             isRider ? rideInfo.driver : rideInfo.rider,
             rating,
-            isRider
+            !isRider
         );
 
         rideContract.completeRide(rideIndex, isRider);

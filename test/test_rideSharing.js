@@ -562,4 +562,107 @@ contract("RideSharing", (accounts) => {
       return ev.rideIndex == 0;
     });
   });
+
+  it("should pay driver and reduce the rider's token balance after the ride is completed", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+
+    const initialDriverBalance = await rideTokenContract.checkCredit(driver);
+    const initialRiderBalance = await rideTokenContract.checkCredit(rider);
+
+    const rideIndex = await rideSharingContract.getRideIndex(0);
+
+    await rideSharingContract.acceptRide(rideIndex, {
+      from: driver,
+    });
+
+    await rideSharingContract.acceptDriver(rideIndex, {
+      from: rider,
+    });
+
+    await rideSharingContract.startRide(rideIndex, {
+      from: driver,
+    });
+
+    await rideSharingContract.startRide(rideIndex, {
+      from: rider,
+    });
+
+    await rideSharingContract.completeRide(rideIndex, 5, {
+      from: driver,
+    });
+
+    await rideSharingContract.completeRide(rideIndex, 5, {
+      from: rider,
+    });
+
+    const finalDriverBalance = await rideTokenContract.checkCredit(driver);
+    const finalRiderBalance = await rideTokenContract.checkCredit(rider);
+
+    // The driver should be paid the fare
+    assert.equal(
+      finalDriverBalance.words[0],
+      initialDriverBalance.words[0] + fare,
+      "The driver should have been paid the fare."
+    );
+
+    // The rider's token balance should be reduced by the fare
+    assert.equal(
+      finalRiderBalance.words[0],
+      initialRiderBalance.words[0] - fare,
+      "The rider's token balance should be reduced by the fare."
+    );
+  });
+
+  it.only("users should have rated each other when ride is completed", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+
+    const rideIndex = await rideSharingContract.getRideIndex(0);
+
+    await rideSharingContract.acceptRide(rideIndex, {
+      from: driver,
+    });
+
+    await rideSharingContract.acceptDriver(rideIndex, {
+      from: rider,
+    });
+
+    await rideSharingContract.startRide(rideIndex, {
+      from: driver,
+    });
+
+    await rideSharingContract.startRide(rideIndex, {
+      from: rider,
+    });
+
+    await rideSharingContract.completeRide(rideIndex, 3, {
+      from: driver,
+    });
+
+    await rideSharingContract.completeRide(rideIndex, 2, {
+      from: rider,
+    });
+
+    const riderInfo = await userContract.getUserInfo(rider);
+    const driverInfo = await userContract.getUserInfo(driver);
+
+    assert.equal(riderInfo["3"].words[0], 3);
+
+    assert.equal(driverInfo["4"].words[0], 2);
+  });
+
+  // it("");
 });

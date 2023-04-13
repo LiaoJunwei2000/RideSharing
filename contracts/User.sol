@@ -58,7 +58,7 @@ contract User {
 
     function rateUser(address user, uint256 rating, bool isRider) public {
         require(rating >= 1 && rating <= 5, "Rating must be between 1 and 5.");
-        require(user != msg.sender, "Cannot rate yourself.");
+        require(user != tx.origin, "Cannot rate yourself.");
         UserInfo storage userInfo = users[user];
         if (isRider) {
             userInfo.riderTotalRating += rating;
