@@ -50,12 +50,17 @@ contract Ride {
         }
     }
 
+    function acceptDriver(uint rideIndex) public {
+        RideInfo storage rideInfo = rides[rideIndex];
+        rideInfo.rideStatus = RideStatus.ReadyToStart;
+    }
+
     function startRide(uint rideIndex, address orignalCaller) public {
         RideInfo storage rideInfo = rides[rideIndex];
 
         require(
-            rideInfo.rideStatus == RideStatus.Created,
-            "Ride must be in the Created status to be started."
+            rideInfo.rideStatus == RideStatus.ReadyToStart,
+            "Ride must be in the ReadyToStart status to be started."
         );
 
         require(

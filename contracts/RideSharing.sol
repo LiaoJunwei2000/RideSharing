@@ -24,6 +24,8 @@ contract RideSharing {
 
     event RideCancelled(uint indexed rideIndex, address indexed rider);
 
+    event RideReadyToStart(uint indexed rideIndex);
+
     event RideStarted(uint indexed rideIndex);
 
     event UserMarkedRideAsCompleted(
@@ -158,6 +160,24 @@ contract RideSharing {
         emit RideAccepted(rideIndex, msg.sender);
     }
 
+    function acceptDriver(uint rideIndex) public {
+        (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
+        require(!isDriver, "Only riders can accept drivers.");
+        Ride rideContract = Ride(rideContractAddress);
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+        require(rideInfo.driver != address(0), "Must have a driver to accept");
+        require(rideInfo.rider == msg.sender, "Only rider can accept");
+
+        rideContract.acceptDriver(rideIndex);
+
+        if (
+            rideContract.getRideDetails(rideIndex).rideStatus ==
+            RideStatus.ReadyToStart
+        ) {
+            emit RideReadyToStart(rideIndex);
+        }
+    }
+
     function startRide(uint rideIndex) public {
         Ride rideContract = Ride(rideContractAddress);
         RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
@@ -170,6 +190,11 @@ contract RideSharing {
         require(
             rideInfo.driver != address(0),
             "Must have a driver before being able to start a ride"
+        );
+
+        require(
+            rideInfo.rideStatus == RideStatus.ReadyToStart,
+            "Rider must accept the Driver to start the ride."
         );
         rideContract.startRide(rideIndex, msg.sender);
 

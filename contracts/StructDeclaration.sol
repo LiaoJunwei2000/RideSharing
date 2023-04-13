@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 enum RideStatus {
     Created,
+    ReadyToStart,
     Started,
     Completed,
     Cancelled
