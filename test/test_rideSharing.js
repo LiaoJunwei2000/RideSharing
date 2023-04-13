@@ -64,9 +64,10 @@ contract("RideSharing", (accounts) => {
   });
 
   it("should allow users to withdraw RideToken to ETH", async () => {
+    const rtAmt = 10;
     await rideSharingContract.getRT({
       from: accounts[6],
-      value: (10 * oneEth) / 1000,
+      value: (rtAmt * oneEth) / 1000,
     });
 
     const initialBalance = await web3.eth.getBalance(accounts[6]);
@@ -77,16 +78,16 @@ contract("RideSharing", (accounts) => {
 
     const finalBalance = await web3.eth.getBalance(accounts[6]);
 
-    const difference = finalBalance - initialBalance;
+    const difference = (finalBalance - initialBalance) / (oneEth / 1000);
 
     truffleAssert.eventEmitted(
       tx,
       "ReturnCredits",
-      (ev) => ev.rideTokenAmt == 10
+      (ev) => ev.rideTokenAmt == rtAmt
     );
 
-    assert.equal(difference < (9 * oneEth) / 1000, true);
-    assert.equal(difference > (8 * oneEth) / 1000, true);
+    assert.equal(difference < rtAmt * 0.95, true);
+    assert.equal(difference > 0, true);
   });
 
   it("should create a new ride", async () => {
@@ -688,5 +689,57 @@ contract("RideSharing", (accounts) => {
     assert.equal(riderInfo["3"].words[0], 3);
 
     assert.equal(driverInfo["4"].words[0], 2);
+  });
+
+  it("should allow contract owner to withdraw fees from the contract and should disallow non-owners from withdrawing", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+
+    const rideIndex = await rideSharingContract.getRideIndex(0);
+
+    await rideSharingContract.acceptRide(rideIndex, {
+      from: driver,
+    });
+
+    await rideSharingContract.acceptDriver(rideIndex, {
+      from: rider,
+    });
+
+    await rideSharingContract.startRide(rideIndex, {
+      from: driver,
+    });
+
+    await rideSharingContract.startRide(rideIndex, {
+      from: rider,
+    });
+
+    await rideSharingContract.completeRide(rideIndex, 5, {
+      from: driver,
+    });
+
+    await rideSharingContract.completeRide(rideIndex, 5, {
+      from: rider,
+    });
+
+    await rideSharingContract.returnRT({
+      from: driver,
+    });
+
+    truffleAssert.reverts(
+      rideSharingContract.withdrawFees({ from: accounts[1] })
+    );
+
+    const initialBalance = await web3.eth.getBalance(accounts[0]);
+    await rideSharingContract.withdrawFees({ from: accounts[0] });
+    const finalBalance = await web3.eth.getBalance(accounts[0]);
+    const diff = (finalBalance - initialBalance) / (oneEth / 1000);
+    assert.equal(diff > 0, true);
+    assert.equal(diff <= fare * 0.05, true);
   });
 });

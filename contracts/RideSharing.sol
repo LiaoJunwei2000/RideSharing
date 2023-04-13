@@ -7,6 +7,8 @@ import "./Ride.sol";
 import "./RideToken.sol";
 
 contract RideSharing {
+    address private owner;
+    uint private fees;
     User private userContract;
     address public rideTokenContractAddress;
     address public rideContractAddress;
@@ -44,6 +46,13 @@ contract RideSharing {
         rideTokenContractAddress = _rideTokenContractAddress;
         userContract = User(_userContract);
         rideContractAddress = _rideContractAddress;
+        owner = msg.sender;
+        fees = 0;
+    }
+
+    modifier ownerOnly() {
+        require(msg.sender == owner);
+        _;
     }
 
     modifier riderOnly(uint rideIndex) {
@@ -123,9 +132,19 @@ contract RideSharing {
         // Transfer RT from reciepent to contract owner
         rideTokenContract.transferCredit(address(this), rtAmt);
         address payable recipient = payable(msg.sender);
-        uint256 amountReturn = (rtAmt * (1000000000000000000 / 1000) * 9) / 10;
+        uint256 amountReturn = (rtAmt * (1000000000000000000 / 1000) * 95) /
+            100;
         recipient.transfer(amountReturn);
+        fees += (rtAmt * (1000000000000000000 / 1000) * 5) / 100;
         emit ReturnCredits(rtAmt);
+    }
+
+    function withdrawFees() public ownerOnly {
+        require(fees > 0, "No fees to withdraw");
+        address payable recipient = payable(msg.sender);
+        uint256 temp = fees;
+        fees = 0;
+        recipient.transfer(temp);
     }
 
     /**
