@@ -137,6 +137,38 @@ contract("RideSharing", (accounts) => {
     );
   });
 
+  it("should allow a rider to reject a driver", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+    const rideIndex = await rideSharingContract.getRideIndex(0);
+
+    await rideSharingContract.acceptRide(rideIndex, {
+      from: driver,
+    });
+
+    const riderReject = await rideSharingContract.rejectDriver(rideIndex, {
+      from: rider,
+    });
+
+    truffleAssert.eventEmitted(
+      riderReject,
+      "RideRejected",
+      (ev) => ev.rideIndex == 0
+    );
+    const rideDetails = await rideContract.getRideDetails(rideIndex);
+    assert.equal(
+      rideDetails.driver,
+      "0x0000000000000000000000000000000000000000",
+      "Ride should have no driver after being driver is rejected"
+    );
+  });
+
   it("should not ride to be started if rider has not accepted the driver", async () => {
     await rideSharingContract.createRide(
       fare,

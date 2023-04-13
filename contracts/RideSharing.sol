@@ -24,6 +24,8 @@ contract RideSharing {
 
     event RideCancelled(uint indexed rideIndex, address indexed rider);
 
+    event RideRejected(uint indexed rideIndex);
+
     event RideReadyToStart(uint indexed rideIndex);
 
     event RideStarted(uint indexed rideIndex);
@@ -176,6 +178,20 @@ contract RideSharing {
         ) {
             emit RideReadyToStart(rideIndex);
         }
+    }
+
+    function rejectDriver(uint rideIndex) public {
+        (, , bool isDriver, , ) = userContract.getUserInfo(msg.sender);
+        require(!isDriver, "Only riders can reject drivers.");
+        Ride rideContract = Ride(rideContractAddress);
+        RideInfo memory rideInfo = rideContract.getRideDetails(rideIndex);
+        require(rideInfo.driver != address(0), "Must have a driver to reject");
+        require(rideInfo.rider == msg.sender, "Only rider can reject");
+
+        rideContract.unsetDriver(rideIndex);
+        driverHasActiveRide[rideInfo.driver] = false;
+
+        emit RideRejected(rideIndex);
     }
 
     function startRide(uint rideIndex) public {

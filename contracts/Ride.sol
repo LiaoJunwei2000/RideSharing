@@ -37,6 +37,10 @@ contract Ride {
         rides[rideIndex].driver = driver;
     }
 
+    function unsetDriver(uint rideIndex) public {
+        rides[rideIndex].driver = address(0);
+    }
+
     function completeRide(uint rideIndex, bool isRider) public {
         RideInfo storage rideInfo = rides[rideIndex];
         if (isRider) {
