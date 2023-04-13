@@ -30,11 +30,6 @@ contract RideSharing {
 
     event RideStarted(uint indexed rideIndex);
 
-    event UserMarkedRideAsCompleted(
-        uint indexed rideIndex,
-        address indexed user
-    );
-
     event RideCompleted(uint indexed rideIndex);
 
     event BuyCredit(uint256 rideTokenAmt); //event of minting of RT to the msg.sender
