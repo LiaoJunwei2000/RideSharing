@@ -98,6 +98,7 @@ contract RideSharing {
      */
     function returnRT() public {
         uint256 rtAmt = checkRT();
+        require(!riderHasActiveRide[msg.sender]&&!driverHasActiveRide[msg.sender], "User cannot withdraw money if they have haven't complete the ride.");
         RideToken rideTokenContract = RideToken(rideTokenContractAddress);
         // Transfer RT from reciepent to contract owner
         rideTokenContract.transferCredit(address(this), rtAmt);
