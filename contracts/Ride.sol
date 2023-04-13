@@ -33,15 +33,36 @@ contract Ride {
         return rides.length - 1;
     }
 
+    modifier riderOnly(uint rideIndex) {
+        require(rides[rideIndex].rider == tx.origin);
+        _;
+    }
+
+    modifier driverOnly(uint rideIndex) {
+        require(rides[rideIndex].driver == tx.origin);
+        _;
+    }
+
+    modifier driverOrRiderOnly(uint rideIndex) {
+        require(
+            rides[rideIndex].driver == tx.origin ||
+                rides[rideIndex].rider == tx.origin
+        );
+        _;
+    }
+
     function setDriver(uint rideIndex, address driver) public {
         rides[rideIndex].driver = driver;
     }
 
-    function unsetDriver(uint rideIndex) public {
+    function unsetDriver(uint rideIndex) public riderOnly(rideIndex) {
         rides[rideIndex].driver = address(0);
     }
 
-    function completeRide(uint rideIndex, bool isRider) public {
+    function completeRide(
+        uint rideIndex,
+        bool isRider
+    ) public driverOrRiderOnly(rideIndex) {
         RideInfo storage rideInfo = rides[rideIndex];
         if (isRider) {
             rideInfo.riderCompleted = true;
@@ -54,12 +75,12 @@ contract Ride {
         }
     }
 
-    function acceptDriver(uint rideIndex) public {
+    function acceptDriver(uint rideIndex) public riderOnly(rideIndex) {
         RideInfo storage rideInfo = rides[rideIndex];
         rideInfo.rideStatus = RideStatus.ReadyToStart;
     }
 
-    function startRide(uint rideIndex, address orignalCaller) public {
+    function startRide(uint rideIndex) public driverOrRiderOnly(rideIndex) {
         RideInfo storage rideInfo = rides[rideIndex];
 
         require(
@@ -67,12 +88,7 @@ contract Ride {
             "Ride must be in the ReadyToStart status to be started."
         );
 
-        require(
-            orignalCaller == rideInfo.rider || orignalCaller == rideInfo.driver,
-            "Only Rider or driver can start the ride "
-        );
-
-        if (orignalCaller == rideInfo.rider) {
+        if (tx.origin == rideInfo.rider) {
             rideInfo.riderStarted = true;
         } else {
             rideInfo.driverStarted = true;
@@ -83,7 +99,7 @@ contract Ride {
         }
     }
 
-    function cancelRide(uint rideIndex) public {
+    function cancelRide(uint rideIndex) public riderOnly(rideIndex) {
         RideInfo storage rideInfo = rides[rideIndex];
 
         require(

@@ -100,7 +100,10 @@ contract RideSharing {
      */
     function returnRT() public {
         uint256 rtAmt = checkRT();
-        require(!riderHasActiveRide[msg.sender]&&!driverHasActiveRide[msg.sender], "User cannot withdraw money if they have haven't complete the ride.");
+        require(
+            !riderHasActiveRide[msg.sender] && !driverHasActiveRide[msg.sender],
+            "User cannot withdraw money if they have haven't complete the ride."
+        );
         RideToken rideTokenContract = RideToken(rideTokenContractAddress);
         // Transfer RT from reciepent to contract owner
         rideTokenContract.transferCredit(address(this), rtAmt);
@@ -213,7 +216,7 @@ contract RideSharing {
             rideInfo.rideStatus == RideStatus.ReadyToStart,
             "Rider must accept the Driver to start the ride."
         );
-        rideContract.startRide(rideIndex, msg.sender);
+        rideContract.startRide(rideIndex);
 
         if (
             rideContract.getRideDetails(rideIndex).rideStatus ==
