@@ -620,7 +620,7 @@ contract("RideSharing", (accounts) => {
     );
   });
 
-  it.only("users should have rated each other when ride is completed", async () => {
+  it("users should have rated each other when ride is completed", async () => {
     await rideSharingContract.createRide(
       fare,
       startLat,
