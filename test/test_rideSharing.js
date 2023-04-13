@@ -111,6 +111,33 @@ contract("RideSharing", (accounts) => {
     assert.equal(rideDetails.driver, driver, "Driver address should match.");
   });
 
+  it("should not allow a user withdraw money if they have haven't complete the ride", async () => {
+    await rideSharingContract.createRide(
+      fare,
+      startLat,
+      startLong,
+      endLat,
+      endLong,
+      { from: rider }
+    );
+
+    truffleAssert.reverts(
+      rideSharingContract.returnRT({
+        from: rider,
+      }),
+      "User cannot withdraw money if they have haven't complete the ride."
+    );
+
+    const rideIndex = await rideSharingContract.getRideIndex(0);
+
+    await rideSharingContract.acceptRide(rideIndex, {
+      from: driver,
+    });
+
+    const rideDetails = await rideContract.getRideDetails(rideIndex);
+    assert.equal(rideDetails.driver, driver, "Driver address should match.");
+  });
+
   it("should allow a rider to accept a driver", async () => {
     await rideSharingContract.createRide(
       fare,
